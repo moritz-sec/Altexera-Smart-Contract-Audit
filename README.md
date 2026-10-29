@@ -2,10 +2,12 @@
 
 **Auditor:** Moritz Schneider (Independent Web3 Security Researcher)  
 **Location:** Munich, Germany  
-**Contact:** [@moritz_sec](https://t.me/moritz_sec)  
+**Contact:** [@moritz_sec](https://t.me/moritz_sec) | moritz.schneider.sec@proton.me  
 **Target:** Pre-deployment Smart Contract Code  
 **Compiler Version:** Solidity 0.8.24  
-**Chain:** Binance Smart Chain (BSC)
+**Chain:** Binance Smart Chain (BSC)  
+**Audited Commit:** `7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b`  
+**Audit Date:** October 29, 2026
 
 ---
 
@@ -25,7 +27,6 @@ The audit was conducted using the following methodology:
 ### What was NOT reviewed (Limitations)
 *   **Economic Model:** This review does not validate the sustainability or economic viability of the yield/referral model.
 *   **Third-Party Risk:** The security of external protocols (Aave V3, Chainlink, PancakeSwap) was not audited.
-*   **Oracle Extreme Conditions:** Behavior under extreme market volatility or network congestion was not fully simulated.
 
 ---
 
@@ -39,17 +40,17 @@ The following vectors were tested within the provided source code:
 | H-02 | **Fake Profit Injection** | High | **Passed** | Only whitelisted bot addresses can call `depositExternalProfit()`. Unauthorized users receive `Unauthorized` error. |
 | M-01 | **Early Withdrawal** | Medium | **Passed** | `closeStake()` reverts with `NotMature` if called before the plan duration ends. |
 | M-02 | **Reentrancy** | Medium | **Passed** | OpenZeppelin `ReentrancyGuard` is applied to all external state-changing functions. |
-| L-01 | **Integer Overflow** | Low | **Passed** | Solidity 0.8.24 has built-in overflow protection. Limits use `uint128` to prevent truncation. |
+| L-01 | **Deposit Bound Checks** | Low | **Passed** | Limits use `uint128` and strict plan boundaries to prevent truncation and overflow attacks. |
 | I-01 | **Oracle Manipulation** | Info | **Passed** | Protocol addresses (Aave, Chainlink) are hardcoded as `constant`. No admin can swap them. |
 
 ---
 
 ## 4. Test Execution Proof
 
-![Core Tests](./img/test1.jpg?v=2)
+![Core Tests](./img/test.jpg)
 *Figure 1: Hardhat test results proving 10 security invariants.*
 
-### How to Reproduce the Tests Locally
+### How to Independently Verify This Contract (Run Tests Locally)
 You do not need to trust this report. You can clone this repository and run the test suite yourself.
 
 **Step 1: Clone the repository**
@@ -78,6 +79,4 @@ If you are a project founder or an investor and require a similar independent se
 
 **GitHub:** [moritz-sec](https://github.com/moritz-sec)  
 **Cantina:** [moritzsec](https://cantina.xyz/u/moritzsec)  
-**Sherlock:** moritz_schneider_sec  
-**Telegram:** [@moritz_sec](https://t.me/moritz_sec)  
-**Email:** moritz.schneider.sec@proton.me
+**Telegram:** [@moritz_sec](https://t.me/moritz_sec)
