@@ -105,10 +105,10 @@ contract AltexeraSecureVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWBNB;
 
-    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    IERC20 public immutable USDT;
     address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant A_USDT = 0xa9251ca9DE909CB71783723713B21E4233fbf1B1;
-    address public constant AAVE_POOL = 0x6807dc923806fE8Fd134338EABCA509979a7e0cB;
+    address public immutable AAVE_POOL;
     address public constant PANCAKE_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
     address public constant CHAINLINK_BNB_USD = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
@@ -118,8 +118,8 @@ contract AltexeraSecureVault is ReentrancyGuard {
     uint256 public constant BUFFER_BPS = 2000;
 
     struct Plan {
-        uint64 minAmount;
-        uint64 maxAmount;
+        uint128 minAmount;
+        uint128 maxAmount;
         uint32 duration;
         uint16 targetApyBps;
         bool principalAtEnd;
@@ -127,11 +127,11 @@ contract AltexeraSecureVault is ReentrancyGuard {
     }
 
     struct Stake {
-        uint64 amount;
-        uint64 paidPrincipal;
-        uint64 sweptRewards;
-        uint64 totalProfit;
-        uint64 startTime;
+        uint128 amount;
+        uint128 paidPrincipal;
+        uint128 sweptRewards;
+        uint128 totalProfit;
+        uint128 startTime;
         uint8 planId;
         bool active;
     }
@@ -183,8 +183,10 @@ contract AltexeraSecureVault is ReentrancyGuard {
     event YieldHarvested(uint256 amount, uint256 fee);
     event ExternalFundReceived(address indexed bot, uint256 amount);
 
-    constructor(address _treasury, address[] memory _bots) {
+    constructor(address _treasury, address[] memory _bots, address _usdt, address _aavePool) {
         treasury = _treasury;
+        USDT = IERC20(_usdt);
+        AAVE_POOL = _aavePool;
         for (uint i = 0; i < _bots.length; i++) {
             isWhitelistedBot[_bots[i]] = true;
         }
@@ -221,8 +223,8 @@ contract AltexeraSecureVault is ReentrancyGuard {
         if (plan.duration == 0) revert InvalidPlan();
         if (amount < plan.minAmount || amount > plan.maxAmount) revert InvalidAmount();
 
-        uint64 start = uint64(block.timestamp);
-        uint64 lifetimeProfit = uint64(_profit(amount, plan.targetApyBps, _businessSeconds(start, uint256(start) + plan.duration)));
+        uint128 start = uint128(block.timestamp);
+        uint128 lifetimeProfit = uint128(_profit(amount, plan.targetApyBps, _businessSeconds(start, uint256(start) + plan.duration)));
 
         IERC20(USDT).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -230,7 +232,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
         uint256 toSupply = amount - buffer;
 
         IERC20(USDT).forceApprove(AAVE_POOL, toSupply);
-        IAaveLendingPool(AAVE_POOL).supply(USDT, toSupply, address(this), 0);
+        IAaveLendingPool(AAVE_POOL).supply(address(USDT), toSupply, address(this), 0);
 
         totalPrincipalLiability += amount;
         totalStakingLiability += amount + lifetimeProfit;
@@ -238,7 +240,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
 
         uint256 index = userStakes[msg.sender].length;
         userStakes[msg.sender].push(Stake({
-            amount: uint64(amount),
+            amount: uint128(amount),
             paidPrincipal: 0,
             sweptRewards: 0,
             totalProfit: lifetimeProfit,
@@ -261,7 +263,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
         (uint256 principal, uint256 profitAmount) = _pending(s);
         if (plan.principalAtEnd) principal = 0;
         uint256 amount = principal + profitAmount;
-        if (amount < 5e6) revert BelowMinimum();
+        if (amount < 5e18) revert BelowMinimum();
 
         _recordPayment(s, principal, profitAmount);
         _ensureLiquidity(amount);
@@ -303,7 +305,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
         if (amount == 0) revert InvalidAmount();
         IERC20(USDT).safeTransferFrom(msg.sender, address(this), amount);
         IERC20(USDT).forceApprove(AAVE_POOL, amount);
-        IAaveLendingPool(AAVE_POOL).supply(USDT, amount, address(this), 0);
+        IAaveLendingPool(AAVE_POOL).supply(address(USDT), amount, address(this), 0);
         emit ExternalFundReceived(msg.sender, amount);
     }
 
@@ -314,7 +316,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
 
         if (yieldAmount > 0) {
             uint256 fee = (yieldAmount * MAX_FEE_BPS) / 10000;
-            IAaveLendingPool(AAVE_POOL).withdraw(USDT, fee, address(this));
+            IAaveLendingPool(AAVE_POOL).withdraw(address(USDT), fee, address(this));
             accumulatedTreasuryFees += fee;
             emit YieldHarvested(yieldAmount, fee);
         }
@@ -328,7 +330,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
 
         address[] memory path = new address[](2);
         path[0] = WBNB;
-        path[1] = USDT;
+        path[1] = address(USDT);
 
         IPancakeRouter(PANCAKE_ROUTER).swapExactETHForTokens{value: bnbAmount}(
             minUsdtOut, path, address(this), block.timestamp
@@ -339,7 +341,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
         uint256 currentBalance = IERC20(USDT).balanceOf(address(this));
         if (currentBalance < amount) {
             uint256 needed = amount - currentBalance;
-            IAaveLendingPool(AAVE_POOL).withdraw(USDT, needed, address(this));
+            IAaveLendingPool(AAVE_POOL).withdraw(address(USDT), needed, address(this));
         }
     }
 
@@ -409,8 +411,8 @@ contract AltexeraSecureVault is ReentrancyGuard {
             principal > totalPrincipalLiability || amount > totalStakingLiability) {
             revert AccountingInvariant();
         }
-        s.paidPrincipal = uint64(paidPrincipal);
-        s.sweptRewards = uint64(paidProfit);
+        s.paidPrincipal = uint128(paidPrincipal);
+        s.sweptRewards = uint128(paidProfit);
         totalPrincipalLiability -= principal;
         totalStakingLiability -= amount;
     }
@@ -462,12 +464,12 @@ contract AltexeraSecureVault is ReentrancyGuard {
     }
 
     function _initializePlans() internal {
-        plans[1] = Plan(100e6, 2999e6, 40 days, 75, true, false);
-        plans[2] = Plan(3000e6, 19999e6, 55 days, 95, true, false);
-        plans[3] = Plan(20000e6, 49999e6, 70 days, 125, true, false);
-        plans[4] = Plan(50000e6, 399999e6, 85 days, 145, true, false);
-        plans[5] = Plan(400000e6, 999999e6, 100 days, 165, true, false);
-        plans[9] = Plan(5000e6, 1000000e6, 360 days, 310, true, true);
+        plans[1] = Plan(100e18, 2999e18, 40 days, 75, true, false);
+        plans[2] = Plan(3000e18, 19999e18, 55 days, 95, true, false);
+        plans[3] = Plan(20000e18, 49999e18, 70 days, 125, true, false);
+        plans[4] = Plan(50000e18, 399999e18, 85 days, 145, true, false);
+        plans[5] = Plan(400000e18, 999999e18, 100 days, 165, true, false);
+        plans[9] = Plan(5000e18, 1000000e18, 360 days, 310, true, true);
         plans[6] = Plan(600e6, 17000e6, 90 days, 200, true, false);
         plans[7] = Plan(18000e6, 145000e6, 110 days, 240, true, false);
         plans[8] = Plan(150000e6, 900000e6, 130 days, 280, true, false);
