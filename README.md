@@ -47,7 +47,7 @@ The following vectors were tested within the provided source code:
 
 ## 4. Test Execution Proof
 
-![Core Tests](./img/test.jpg?v=2)
+![Core Tests](./img/audit_final.jpg)
 *Figure 1: Hardhat test results proving 8 security invariants.*
 
 ### How to Independently Verify This Contract (Run Tests Locally)
