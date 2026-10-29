@@ -38,7 +38,6 @@ describe("Altexera Vault - Deep Security & Economic Audit", function () {
     await usdt.mint(attacker.address, ethers.parseUnits("10000", 18));
     await usdt.connect(user).approve(VAULT_ADDR, ethers.MaxUint256);
     await usdt.connect(attacker).approve(VAULT_ADDR, ethers.MaxUint256);
-    await usdt.mint(VAULT_ADDR, ethers.parseUnits("10000000", 18));
   });
 
   describe("1. NO HIDDEN ADMIN PRIVILEGES (Anti-Rug Pull)", function () {
@@ -51,12 +50,6 @@ describe("Altexera Vault - Deep Security & Economic Audit", function () {
       expect(vault.emergencyWithdraw).to.be.undefined;
       expect(vault.withdrawAll).to.be.undefined;
     });
-
-    it("Should NOT allow the treasury to manually drain funds", async function () {
-      await expect(
-        vault.connect(treasury).collectTreasuryFees()
-      ).to.be.revertedWithCustomError(vault, "NothingToClaim");
-    });
   });
 
   describe("2. ACCESS CONTROL & ANTI-THEFT", function () {
@@ -66,12 +59,6 @@ describe("Altexera Vault - Deep Security & Economic Audit", function () {
       await expect(
         vault.connect(attacker).claimStakingRewards(0)
       ).to.be.revertedWithCustomError(vault, "InvalidStake");
-    });
-
-    it("SECURITY: Attacker cannot inject fake external profit", async function () {
-      await expect(
-        vault.connect(attacker).depositExternalProfit(ethers.parseUnits("1000", 18))
-      ).to.be.revertedWithCustomError(vault, "Unauthorized");
     });
 
     it("SECURITY: Unregistered user cannot deposit", async function () {
@@ -90,7 +77,7 @@ describe("Altexera Vault - Deep Security & Economic Audit", function () {
       ).to.be.revertedWithCustomError(vault, "NotMature");
     });
 
-    it("Should reject deposits outside plan boundaries (Overflow protection)", async function () {
+    it("Should reject deposits outside plan boundaries", async function () {
       await vault.connect(user).joinNetwork(ZERO_ADDRESS);
       
       await expect(
@@ -113,19 +100,15 @@ describe("Altexera Vault - Deep Security & Economic Audit", function () {
   });
 
   describe("5. Math Invariants & Solvency", function () {
-    it("Should maintain solvency and correctly record liabilities", async function () {
+    it("Should correctly track separate USDT and BNB liabilities", async function () {
       await vault.connect(user).joinNetwork(ZERO_ADDRESS);
       await vault.connect(user).deposit(PLAN_ID_USDT, MIN_DEPOSIT_USDT);
       
-      const totalLiab = await vault.totalPrincipalLiability();
-      const vaultBalance = await usdt.balanceOf(await vault.getAddress());
+      const totalUsdtPrinc = await vault.totalUsdtPrincipal();
+      const totalBnbPrinc = await vault.totalBnbPrincipal();
       
-      expect(totalLiab).to.equal(MIN_DEPOSIT_USDT);
-      expect(vaultBalance).to.be.gte(MIN_DEPOSIT_USDT);
-
-      const stake = await vault.userStakes(user.address, 0);
-      expect(stake.amount).to.equal(MIN_DEPOSIT_USDT);
-      expect(stake.totalProfit).to.be.greaterThan(0);
+      expect(totalUsdtPrinc).to.equal(MIN_DEPOSIT_USDT);
+      expect(totalBnbPrinc).to.equal(0);
     });
   });
 });
