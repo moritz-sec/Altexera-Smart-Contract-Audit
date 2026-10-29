@@ -46,7 +46,7 @@ The following vectors were tested within the provided source code:
 
 ## 4. Test Execution Proof
 
-![Core Tests](./img/test1.jpg)
+![Core Tests](./img/test1.jpg?v=2)
 *Figure 1: Hardhat test results proving 10 security invariants.*
 
 ### How to Reproduce the Tests Locally
