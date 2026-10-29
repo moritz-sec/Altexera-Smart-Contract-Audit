@@ -16,112 +16,25 @@ interface IAaveLendingPool {
     function withdraw(address asset, uint256 amount, address to) external returns (uint256);
 }
 
-interface IPancakeRouter {
-    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);
-}
-
-interface IWBNB is IERC20 {
-    function deposit() external payable;
-    function withdraw(uint wad) external;
-}
-
-library AltexeraReferralSchedule {
-    error InvalidRank();
-    error InvalidLevel();
-
-    function thresholdUsd6(uint8 rankId) internal pure returns (uint256) {
-        if (rankId > 11) revert InvalidRank();
-        if (rankId == 0) return 0;
-        if (rankId == 1) return 25000_000000;
-        if (rankId == 2) return 85000_000000;
-        if (rankId == 3) return 250000_000000;
-        if (rankId == 4) return 500000_000000;
-        if (rankId == 5) return 1000000_000000;
-        if (rankId == 6) return 3500000_000000;
-        if (rankId == 7) return 5000000_000000;
-        if (rankId == 8) return 10000000_000000;
-        if (rankId == 9) return 25000000_000000;
-        if (rankId == 10) return 50000000_000000;
-        if (rankId == 11) return 100000000_000000;
-        revert InvalidRank();
-    }
-
-    function communityTierRate(uint8 rankId, uint8 level) internal pure returns (uint16) {
-        if (rankId > 11) revert InvalidRank();
-        if (level == 0 || level > 30) revert InvalidLevel();
-        if (rankId == 0) {
-            uint16[30] memory rates = [uint16(500), uint16(300), uint16(100), uint16(100), uint16(100), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 1) {
-            uint16[30] memory rates = [uint16(600), uint16(300), uint16(200), uint16(100), uint16(100), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 2) {
-            uint16[30] memory rates = [uint16(700), uint16(400), uint16(200), uint16(200), uint16(100), uint16(100), uint16(50), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 3) {
-            uint16[30] memory rates = [uint16(800), uint16(400), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 4) {
-            uint16[30] memory rates = [uint16(900), uint16(400), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 5) {
-            uint16[30] memory rates = [uint16(1000), uint16(400), uint16(300), uint16(300), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 6) {
-            uint16[30] memory rates = [uint16(1100), uint16(400), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(30), uint16(30), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 7) {
-            uint16[30] memory rates = [uint16(1200), uint16(500), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 8) {
-            uint16[30] memory rates = [uint16(1300), uint16(600), uint16(400), uint16(300), uint16(200), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(50), uint16(50), uint16(30), uint16(30), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 9) {
-            uint16[30] memory rates = [uint16(1400), uint16(700), uint16(400), uint16(400), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(50), uint16(50), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 10) {
-            uint16[30] memory rates = [uint16(1400), uint16(700), uint16(400), uint16(400), uint16(300), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0)];
-            return rates[level - 1];
-        }
-        if (rankId == 11) {
-            uint16[30] memory rates = [uint16(1500), uint16(700), uint16(400), uint16(400), uint16(300), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(40), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20)];
-            return rates[level - 1];
-        }
-        revert InvalidRank();
-    }
-}
-
 contract AltexeraSecureVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using SafeERC20 for IWBNB;
 
     IERC20 public immutable USDT;
-    address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address public constant A_USDT = 0xa9251ca9DE909CB71783723713B21E4233fbf1B1;
     address public immutable AAVE_POOL;
-    address public constant PANCAKE_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
-    address public constant CHAINLINK_BNB_USD = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
+    address public immutable CHAINLINK_BNB_USD;
+    address public immutable treasury;
+    mapping(address => bool) public isWhitelistedBot;
 
-    uint256 public constant MAX_FEE_BPS = 1000;
-    uint256 public constant ORACLE_MAX_AGE = 1 hours;
-    uint256 public constant SLIPPAGE_BPS = 150;
-    uint256 public constant BUFFER_BPS = 2000;
+    uint128 public constant MAX_LEVELS = 30;
+    uint256 private constant DAY = 1 days;
+    uint256 private constant WEEK = 7 days;
 
     struct Plan {
         uint128 minAmount;
         uint128 maxAmount;
         uint32 duration;
         uint16 targetApyBps;
+        bool isBnb;
         bool principalAtEnd;
         bool profitAtEnd;
     }
@@ -137,32 +50,23 @@ contract AltexeraSecureVault is ReentrancyGuard {
     }
 
     struct ReferralNode { address parent; bool registered; }
-    struct RankState { uint128 volume; uint64 volumeBlock; uint8 confirmedRank; uint8 nextRank; }
+    struct RankState { uint128 volume; uint128 volumeBlock; uint8 confirmedRank; uint8 nextRank; }
 
     mapping(uint256 => Plan) public plans;
     mapping(address => Stake[]) public userStakes;
     mapping(address => ReferralNode) internal _networkNodes;
     mapping(address => RankState) internal _rankState;
     mapping(address => uint256) public pendingCommunityBonuses;
-    mapping(address => bool) public isWhitelistedBot;
 
     uint256 public totalPrincipalLiability;
     uint256 public totalStakingLiability;
     uint256 public totalCommunityLiability;
     uint256 public accumulatedTreasuryFees;
 
-    address public immutable treasury;
-    uint8 public constant MAX_LEVELS = 30;
-    uint256 private constant DAY = 1 days;
-    uint256 private constant WEEK = 7 days;
-
     error InvalidAmount();
     error NotRegistered();
     error AlreadyRegistered();
     error InvalidPlan();
-    error StaleOracle();
-    error InvalidOracle();
-    error SlippageExceeded();
     error InvalidStake();
     error InactiveStake();
     error NotMature();
@@ -170,67 +74,38 @@ contract AltexeraSecureVault is ReentrancyGuard {
     error LongLocked();
     error BelowMinimum();
     error NothingToClaim();
-    error AccountingInvariant();
     error Unauthorized();
+    error AccountingInvariant();
 
-    event Deposited(address indexed user, uint256 planId, uint256 amount);
-    event StakeOpened(address indexed user, uint256 indexed index, uint256 lifetimeProfit);
-    event StakingClaimed(address indexed user, uint256 stakeIndex, uint256 amount);
-    event StakeClosed(address indexed user, uint256 stakeIndex, uint256 totalPayout);
-    event ReferralRegistered(address indexed user, address indexed referrer);
-    event RankScheduled(address indexed user, uint8 rank, uint256 volume, uint256 eligibleFromBlock);
-    event FeeCollected(uint256 amount);
-    event YieldHarvested(uint256 amount, uint256 fee);
-    event ExternalFundReceived(address indexed bot, uint256 amount);
-
-    constructor(address _treasury, address[] memory _bots, address _usdt, address _aavePool) {
+    constructor(address _treasury, address[] memory _bots, address _usdt, address _aavePool, address _priceFeed) {
         treasury = _treasury;
         USDT = IERC20(_usdt);
         AAVE_POOL = _aavePool;
+        CHAINLINK_BNB_USD = _priceFeed;
         for (uint i = 0; i < _bots.length; i++) {
             isWhitelistedBot[_bots[i]] = true;
         }
         _initializePlans();
     }
 
-    function collectTreasuryFees() external nonReentrant {
-        uint256 fee = accumulatedTreasuryFees;
-        if (fee == 0) revert NothingToClaim();
-        accumulatedTreasuryFees = 0;
-        IERC20(USDT).safeTransfer(treasury, fee);
-        emit FeeCollected(fee);
-    }
-
-    function joinNetwork(address parent) external nonReentrant {
+    function joinNetwork(address parent) external {
         if (_networkNodes[msg.sender].registered) revert AlreadyRegistered();
-        if (parent == msg.sender || (parent != address(0) && !_networkNodes[parent].registered))
-            revert InvalidAmount();
+        if (parent == msg.sender || (parent != address(0) && !_networkNodes[parent].registered)) revert InvalidAmount();
         _networkNodes[msg.sender] = ReferralNode(parent, true);
-        emit ReferralRegistered(msg.sender, parent);
-    }
-
-    function isNetworkMember(address user) external view returns (bool) {
-        return _networkNodes[user].registered;
-    }
-
-    function networkParent(address user) external view returns (address) {
-        return _networkNodes[user].parent;
     }
 
     function deposit(uint256 planId, uint256 amount) external nonReentrant {
-        if (!_networkNodes[msg.sender].registered) revert NotRegistered();
         Plan memory plan = plans[planId];
-        if (plan.duration == 0) revert InvalidPlan();
+        if (plan.duration == 0 || plan.isBnb) revert InvalidPlan();
         if (amount < plan.minAmount || amount > plan.maxAmount) revert InvalidAmount();
+        if (!_networkNodes[msg.sender].registered) revert NotRegistered();
 
         uint128 start = uint128(block.timestamp);
         uint128 lifetimeProfit = uint128(_profit(amount, plan.targetApyBps, _businessSeconds(start, uint256(start) + plan.duration)));
 
         IERC20(USDT).safeTransferFrom(msg.sender, address(this), amount);
-
-        uint256 buffer = (amount * BUFFER_BPS) / 10000;
+        uint256 buffer = (amount * 2000) / 10000;
         uint256 toSupply = amount - buffer;
-
         IERC20(USDT).forceApprove(AAVE_POOL, toSupply);
         IAaveLendingPool(AAVE_POOL).supply(address(USDT), toSupply, address(this), 0);
 
@@ -248,9 +123,31 @@ contract AltexeraSecureVault is ReentrancyGuard {
             planId: uint8(planId),
             active: true
         }));
+    }
 
-        emit Deposited(msg.sender, planId, amount);
-        emit StakeOpened(msg.sender, index, lifetimeProfit);
+    function depositBNB(uint256 planId) external payable nonReentrant {
+        Plan memory plan = plans[planId];
+        if (plan.duration == 0 || !plan.isBnb) revert InvalidPlan();
+        if (msg.value < plan.minAmount || msg.value > plan.maxAmount) revert InvalidAmount();
+        if (!_networkNodes[msg.sender].registered) revert NotRegistered();
+
+        uint128 start = uint128(block.timestamp);
+        uint128 lifetimeProfit = uint128(_profit(msg.value, plan.targetApyBps, _businessSeconds(start, uint256(start) + plan.duration)));
+
+        totalPrincipalLiability += msg.value;
+        totalStakingLiability += msg.value + lifetimeProfit;
+        _distributeNetwork(msg.sender, msg.value);
+
+        uint256 index = userStakes[msg.sender].length;
+        userStakes[msg.sender].push(Stake({
+            amount: uint128(msg.value),
+            paidPrincipal: 0,
+            sweptRewards: 0,
+            totalProfit: lifetimeProfit,
+            startTime: start,
+            planId: uint8(planId),
+            active: true
+        }));
     }
 
     function claimStakingRewards(uint256 index) external nonReentrant {
@@ -260,15 +157,13 @@ contract AltexeraSecureVault is ReentrancyGuard {
         Plan memory plan = plans[s.planId];
         if (plan.profitAtEnd) revert LongLocked();
 
-        (uint256 principal, uint256 profitAmount) = _pending(s);
+        (uint256 principal, uint256 profit) = _pending(s);
         if (plan.principalAtEnd) principal = 0;
-        uint256 amount = principal + profitAmount;
+        uint256 amount = principal + profit;
         if (amount < 5e18) revert BelowMinimum();
 
-        _recordPayment(s, principal, profitAmount);
-        _ensureLiquidity(amount);
-        IERC20(USDT).safeTransfer(msg.sender, amount);
-        emit StakingClaimed(msg.sender, index, amount);
+        _recordPayment(s, principal, profit);
+        _sendExact(msg.sender, amount, plan.isBnb);
     }
 
     function closeStake(uint256 index) external nonReentrant {
@@ -277,27 +172,27 @@ contract AltexeraSecureVault is ReentrancyGuard {
         if (!s.active) revert InactiveStake();
         if (block.timestamp < uint256(s.startTime) + plans[s.planId].duration) revert NotMature();
 
-        (uint256 principal, uint256 profitAmount) = _pending(s);
-        _recordPayment(s, principal, profitAmount);
+        (uint256 principal, uint256 profit) = _pending(s);
+        _recordPayment(s, principal, profit);
         s.active = false;
-        uint256 amount = principal + profitAmount;
-        if (amount != 0) {
-            _ensureLiquidity(amount);
-            IERC20(USDT).safeTransfer(msg.sender, amount);
-        }
-        emit StakeClosed(msg.sender, index, amount);
+        uint256 amount = principal + profit;
+        if (amount != 0) _sendExact(msg.sender, amount, plans[s.planId].isBnb);
     }
 
     function claimNetworkBonuses() external nonReentrant {
         _requireWeekday();
         uint256 amount = pendingCommunityBonuses[msg.sender];
         if (amount == 0) revert NothingToClaim();
-        if (amount > totalCommunityLiability) revert AccountingInvariant();
         pendingCommunityBonuses[msg.sender] = 0;
         totalCommunityLiability -= amount;
+        _sendExact(msg.sender, amount, false);
+    }
 
-        _ensureLiquidity(amount);
-        IERC20(USDT).safeTransfer(msg.sender, amount);
+        function collectTreasuryFees() external nonReentrant {
+        uint256 fee = accumulatedTreasuryFees;
+        if (fee == 0) revert NothingToClaim();
+        accumulatedTreasuryFees = 0;
+        IERC20(USDT).safeTransfer(treasury, fee);
     }
 
     function depositExternalProfit(uint256 amount) external nonReentrant {
@@ -306,50 +201,19 @@ contract AltexeraSecureVault is ReentrancyGuard {
         IERC20(USDT).safeTransferFrom(msg.sender, address(this), amount);
         IERC20(USDT).forceApprove(AAVE_POOL, amount);
         IAaveLendingPool(AAVE_POOL).supply(address(USDT), amount, address(this), 0);
-        emit ExternalFundReceived(msg.sender, amount);
     }
 
-    function harvestYield() external nonReentrant {
-        uint256 aTokenBalance = IERC20(A_USDT).balanceOf(address(this));
-        uint256 totalLiability = totalPrincipalLiability + totalStakingLiability + totalCommunityLiability;
-        uint256 yieldAmount = aTokenBalance > totalLiability ? aTokenBalance - totalLiability : 0;
-
-        if (yieldAmount > 0) {
-            uint256 fee = (yieldAmount * MAX_FEE_BPS) / 10000;
-            IAaveLendingPool(AAVE_POOL).withdraw(address(USDT), fee, address(this));
-            accumulatedTreasuryFees += fee;
-            emit YieldHarvested(yieldAmount, fee);
+    function _sendExact(address to, uint256 amount, bool isBnb) internal {
+        if (isBnb) {
+            (bool ok, ) = payable(to).call{value: amount}("");
+            require(ok, "BNB transfer failed");
+        } else {
+            uint256 currentBalance = USDT.balanceOf(address(this));
+            if (currentBalance < amount) {
+                IAaveLendingPool(AAVE_POOL).withdraw(address(USDT), amount - currentBalance, address(this));
+            }
+            USDT.safeTransfer(to, amount);
         }
-    }
-
-    function swapBnbToUsdt(uint256 bnbAmount) external nonReentrant {
-        uint256 bnbPrice = _getBnbPrice();
-        uint256 expectedUsdt = (bnbAmount * bnbPrice) / 1e18;
-        uint256 minUsdtOut = (expectedUsdt * (10000 - SLIPPAGE_BPS)) / 10000;
-        if (minUsdtOut == 0) revert SlippageExceeded();
-
-        address[] memory path = new address[](2);
-        path[0] = WBNB;
-        path[1] = address(USDT);
-
-        IPancakeRouter(PANCAKE_ROUTER).swapExactETHForTokens{value: bnbAmount}(
-            minUsdtOut, path, address(this), block.timestamp
-        );
-    }
-
-    function _ensureLiquidity(uint256 amount) internal {
-        uint256 currentBalance = IERC20(USDT).balanceOf(address(this));
-        if (currentBalance < amount) {
-            uint256 needed = amount - currentBalance;
-            IAaveLendingPool(AAVE_POOL).withdraw(address(USDT), needed, address(this));
-        }
-    }
-
-    function _getBnbPrice() internal view returns (uint256) {
-        (uint80 roundId, int256 price, , uint256 updatedAt, uint80 answeredInRound) = IPriceFeed(CHAINLINK_BNB_USD).latestRoundData();
-        if (price <= 0 || answeredInRound < roundId) revert InvalidOracle();
-        if (block.timestamp - updatedAt > ORACLE_MAX_AGE) revert StaleOracle();
-        return uint256(price);
     }
 
     function _distributeNetwork(address user, uint256 amount) internal {
@@ -357,7 +221,7 @@ contract AltexeraSecureVault is ReentrancyGuard {
         uint256 added;
         for (uint8 level = 1; level <= MAX_LEVELS && current != address(0); ++level) {
             uint8 eligibleRank = _updateRank(current, amount);
-            uint256 reward = Math.mulDiv(amount, AltexeraReferralSchedule.communityTierRate(eligibleRank, level), 10_000);
+            uint256 reward = Math.mulDiv(amount, _getLevelRate(eligibleRank, level), 10_000);
             if (reward != 0) {
                 pendingCommunityBonuses[current] += reward;
                 added += reward;
@@ -374,27 +238,24 @@ contract AltexeraSecureVault is ReentrancyGuard {
         uint8 nextRank = _rankForVolume(volume);
         _rankState[user] = RankState({
             volume: volume,
-            volumeBlock: uint64(block.number),
+            volumeBlock: uint128(block.number),
             confirmedRank: eligibleRank,
             nextRank: nextRank
         });
-        if (nextRank > state.nextRank) {
-            emit RankScheduled(user, nextRank, volume, block.number + 1);
-        }
     }
 
     function _rankForVolume(uint256 volume) internal pure returns (uint8) {
-        if (volume >= 100_000_000e6) return 11;
-        if (volume >= 50_000_000e6) return 10;
-        if (volume >= 25_000_000e6) return 9;
-        if (volume >= 10_000_000e6) return 8;
-        if (volume >= 5_000_000e6) return 7;
-        if (volume >= 3_500_000e6) return 6;
-        if (volume >= 1_000_000e6) return 5;
-        if (volume >= 500_000e6) return 4;
-        if (volume >= 250_000e6) return 3;
-        if (volume >= 85_000e6) return 2;
-        if (volume >= 25_000e6) return 1;
+        if (volume >= 100_000_000e18) return 11;
+        if (volume >= 50_000_000e18) return 10;
+        if (volume >= 25_000_000e18) return 9;
+        if (volume >= 10_000_000e18) return 8;
+        if (volume >= 5_000_000e18) return 7;
+        if (volume >= 3_500_000e18) return 6;
+        if (volume >= 1_000_000e18) return 5;
+        if (volume >= 500_000e18) return 4;
+        if (volume >= 250_000e18) return 3;
+        if (volume >= 85_000e18) return 2;
+        if (volume >= 25_000e18) return 1;
         return 0;
     }
 
@@ -403,38 +264,46 @@ contract AltexeraSecureVault is ReentrancyGuard {
         return userStakes[user][index];
     }
 
-    function _recordPayment(Stake storage s, uint256 principal, uint256 profitAmount) internal {
+    function _recordPayment(Stake storage s, uint256 principal, uint256 profit) internal {
         uint256 paidPrincipal = uint256(s.paidPrincipal) + principal;
-        uint256 paidProfit = uint256(s.sweptRewards) + profitAmount;
-        uint256 amount = principal + profitAmount;
-        if (paidPrincipal > s.amount || paidProfit > s.totalProfit ||
-            principal > totalPrincipalLiability || amount > totalStakingLiability) {
-            revert AccountingInvariant();
-        }
+        uint256 paidProfit = uint256(s.sweptRewards) + profit;
+        uint256 amount = principal + profit;
+        if (paidPrincipal > s.amount || paidProfit > s.totalProfit || principal > totalPrincipalLiability || amount > totalStakingLiability) revert AccountingInvariant();
         s.paidPrincipal = uint128(paidPrincipal);
         s.sweptRewards = uint128(paidProfit);
         totalPrincipalLiability -= principal;
         totalStakingLiability -= amount;
     }
 
-    function _pending(Stake storage s) internal view returns (uint256 principal, uint256 profitAmount) {
+    function _pending(Stake storage s) internal view returns (uint256 principal, uint256 profit) {
         if (!s.active) return (0, 0);
         Plan memory plan = plans[s.planId];
         uint256 start = s.startTime;
         uint256 end = start + plan.duration;
         bool mature = block.timestamp >= end;
         uint256 until = mature ? end : block.timestamp;
-        uint256 principalEntitled = plan.principalAtEnd
-            ? (mature ? s.amount : 0)
-            : Math.mulDiv(s.amount, until - start, plan.duration);
-        uint256 profitEntitled = mature ? s.totalProfit :
-            (plan.profitAtEnd ? 0 : _profit(s.amount, plan.targetApyBps, _businessSeconds(start, until)));
-        if (principalEntitled > s.amount || profitEntitled > s.totalProfit ||
-            s.paidPrincipal > principalEntitled || s.sweptRewards > profitEntitled) {
-            revert AccountingInvariant();
-        }
+        uint256 principalEntitled = plan.principalAtEnd ? (mature ? s.amount : 0) : Math.mulDiv(s.amount, until - start, plan.duration);
+        uint256 profitEntitled = mature ? s.totalProfit : (plan.profitAtEnd ? 0 : _profit(s.amount, plan.targetApyBps, _businessSeconds(start, until)));
+        if (principalEntitled > s.amount || profitEntitled > s.totalProfit || s.paidPrincipal > principalEntitled || s.sweptRewards > profitEntitled) revert AccountingInvariant();
         principal = principalEntitled - s.paidPrincipal;
-        profitAmount = profitEntitled - s.sweptRewards;
+        profit = profitEntitled - s.sweptRewards;
+    }
+
+    function _getLevelRate(uint8 rank, uint8 level) internal pure returns (uint256) {
+        if (rank > 11 || level == 0 || level > 30) return 0;
+        if (rank == 0) { uint16[30] memory r = [uint16(500), uint16(300), uint16(100), uint16(100), uint16(100), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 1) { uint16[30] memory r = [uint16(600), uint16(300), uint16(200), uint16(100), uint16(100), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 2) { uint16[30] memory r = [uint16(700), uint16(400), uint16(200), uint16(200), uint16(100), uint16(100), uint16(50), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 3) { uint16[30] memory r = [uint16(800), uint16(400), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 4) { uint16[30] memory r = [uint16(900), uint16(400), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(50), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 5) { uint16[30] memory r = [uint16(1000), uint16(400), uint16(300), uint16(300), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 6) { uint16[30] memory r = [uint16(1100), uint16(400), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(30), uint16(30), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 7) { uint16[30] memory r = [uint16(1200), uint16(500), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 8) { uint16[30] memory r = [uint16(1300), uint16(600), uint16(400), uint16(300), uint16(200), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(50), uint16(50), uint16(30), uint16(30), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 9) { uint16[30] memory r = [uint16(1400), uint16(700), uint16(400), uint16(400), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(50), uint16(50), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 10) { uint16[30] memory r = [uint16(1400), uint16(700), uint16(400), uint16(400), uint16(300), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(50), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(0), uint16(0), uint16(0)]; return r[level-1]; }
+        if (rank == 11) { uint16[30] memory r = [uint16(1500), uint16(700), uint16(400), uint16(400), uint16(300), uint16(300), uint16(300), uint16(200), uint16(200), uint16(200), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(100), uint16(50), uint16(50), uint16(40), uint16(30), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20), uint16(20)]; return r[level-1]; }
+        return 0;
     }
 
     function _profit(uint256 amount, uint256 rate, uint256 businessSeconds_) internal pure returns (uint256) {
@@ -464,15 +333,15 @@ contract AltexeraSecureVault is ReentrancyGuard {
     }
 
     function _initializePlans() internal {
-        plans[1] = Plan(100e18, 2999e18, 40 days, 75, true, false);
-        plans[2] = Plan(3000e18, 19999e18, 55 days, 95, true, false);
-        plans[3] = Plan(20000e18, 49999e18, 70 days, 125, true, false);
-        plans[4] = Plan(50000e18, 399999e18, 85 days, 145, true, false);
-        plans[5] = Plan(400000e18, 999999e18, 100 days, 165, true, false);
-        plans[9] = Plan(5000e18, 1000000e18, 360 days, 310, true, true);
-        plans[6] = Plan(600e6, 17000e6, 90 days, 200, true, false);
-        plans[7] = Plan(18000e6, 145000e6, 110 days, 240, true, false);
-        plans[8] = Plan(150000e6, 900000e6, 130 days, 280, true, false);
-        plans[10] = Plan(3000e6, 900000e6, 360 days, 310, true, true);
+        plans[1] = Plan(100e18, 2999e18, 40 days, 75, false, true, false);
+        plans[2] = Plan(3000e18, 19999e18, 55 days, 95, false, true, false);
+        plans[3] = Plan(20000e18, 49999e18, 70 days, 125, false, true, false);
+        plans[4] = Plan(50000e18, 399999e18, 85 days, 145, false, true, false);
+        plans[5] = Plan(400000e18, 999999e18, 100 days, 165, false, true, false);
+        plans[6] = Plan(1 ether, 29 ether, 90 days, 200, true, false, false);
+        plans[7] = Plan(30 ether, 249 ether, 110 days, 240, true, false, false);
+        plans[8] = Plan(250 ether, 1500 ether, 130 days, 280, true, false, false);
+        plans[9] = Plan(5000e18, 1000000e18, 360 days, 310, false, true, true);
+        plans[10] = Plan(5 ether, 1500 ether, 360 days, 310, true, true, true);
     }
 }
