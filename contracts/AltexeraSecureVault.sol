@@ -56,11 +56,18 @@ contract AltexeraSecureVault is ReentrancyGuard {
     mapping(address => Stake[]) public userStakes;
     mapping(address => ReferralNode) internal _networkNodes;
     mapping(address => RankState) internal _rankState;
-    mapping(address => uint256) public pendingCommunityBonuses;
+    
+    mapping(address => uint256) public pendingUsdtBonuses;
+    mapping(address => uint256) public pendingBnbBonuses;
 
-    uint256 public totalPrincipalLiability;
-    uint256 public totalStakingLiability;
-    uint256 public totalCommunityLiability;
+    uint256 public totalUsdtPrincipal;
+    uint256 public totalUsdtStaking;
+    uint256 public totalUsdtCommunity;
+    
+    uint256 public totalBnbPrincipal;
+    uint256 public totalBnbStaking;
+    uint256 public totalBnbCommunity;
+
     uint256 public accumulatedTreasuryFees;
 
     error InvalidAmount();
@@ -109,11 +116,10 @@ contract AltexeraSecureVault is ReentrancyGuard {
         IERC20(USDT).forceApprove(AAVE_POOL, toSupply);
         IAaveLendingPool(AAVE_POOL).supply(address(USDT), toSupply, address(this), 0);
 
-        totalPrincipalLiability += amount;
-        totalStakingLiability += amount + lifetimeProfit;
-        _distributeNetwork(msg.sender, amount);
+        totalUsdtPrincipal += amount;
+        totalUsdtStaking += amount + lifetimeProfit;
+        _distributeNetwork(msg.sender, amount, false);
 
-        uint256 index = userStakes[msg.sender].length;
         userStakes[msg.sender].push(Stake({
             amount: uint128(amount),
             paidPrincipal: 0,
@@ -134,11 +140,10 @@ contract AltexeraSecureVault is ReentrancyGuard {
         uint128 start = uint128(block.timestamp);
         uint128 lifetimeProfit = uint128(_profit(msg.value, plan.targetApyBps, _businessSeconds(start, uint256(start) + plan.duration)));
 
-        totalPrincipalLiability += msg.value;
-        totalStakingLiability += msg.value + lifetimeProfit;
-        _distributeNetwork(msg.sender, msg.value);
+        totalBnbPrincipal += msg.value;
+        totalBnbStaking += msg.value + lifetimeProfit;
+        _distributeNetwork(msg.sender, msg.value, true);
 
-        uint256 index = userStakes[msg.sender].length;
         userStakes[msg.sender].push(Stake({
             amount: uint128(msg.value),
             paidPrincipal: 0,
@@ -160,9 +165,10 @@ contract AltexeraSecureVault is ReentrancyGuard {
         (uint256 principal, uint256 profit) = _pending(s);
         if (plan.principalAtEnd) principal = 0;
         uint256 amount = principal + profit;
-        if (amount < 5e18) revert BelowMinimum();
+        
+        if (amount < 5e18 && !plan.isBnb) revert BelowMinimum();
 
-        _recordPayment(s, principal, profit);
+        _recordPayment(s, principal, profit, plan.isBnb);
         _sendExact(msg.sender, amount, plan.isBnb);
     }
 
@@ -173,38 +179,33 @@ contract AltexeraSecureVault is ReentrancyGuard {
         if (block.timestamp < uint256(s.startTime) + plans[s.planId].duration) revert NotMature();
 
         (uint256 principal, uint256 profit) = _pending(s);
-        _recordPayment(s, principal, profit);
+        _recordPayment(s, principal, profit, plans[s.planId].isBnb);
         s.active = false;
         uint256 amount = principal + profit;
         if (amount != 0) _sendExact(msg.sender, amount, plans[s.planId].isBnb);
     }
 
-    function claimNetworkBonuses() external nonReentrant {
+    function claimUsdtBonuses() external nonReentrant {
         _requireWeekday();
-        uint256 amount = pendingCommunityBonuses[msg.sender];
+        uint256 amount = pendingUsdtBonuses[msg.sender];
         if (amount == 0) revert NothingToClaim();
-        pendingCommunityBonuses[msg.sender] = 0;
-        totalCommunityLiability -= amount;
+        pendingUsdtBonuses[msg.sender] = 0;
+        totalUsdtCommunity -= amount;
         _sendExact(msg.sender, amount, false);
     }
 
-        function collectTreasuryFees() external nonReentrant {
-        uint256 fee = accumulatedTreasuryFees;
-        if (fee == 0) revert NothingToClaim();
-        accumulatedTreasuryFees = 0;
-        IERC20(USDT).safeTransfer(treasury, fee);
-    }
-
-    function depositExternalProfit(uint256 amount) external nonReentrant {
-        if (!isWhitelistedBot[msg.sender]) revert Unauthorized();
-        if (amount == 0) revert InvalidAmount();
-        IERC20(USDT).safeTransferFrom(msg.sender, address(this), amount);
-        IERC20(USDT).forceApprove(AAVE_POOL, amount);
-        IAaveLendingPool(AAVE_POOL).supply(address(USDT), amount, address(this), 0);
+    function claimBnbBonuses() external nonReentrant {
+        _requireWeekday();
+        uint256 amount = pendingBnbBonuses[msg.sender];
+        if (amount == 0) revert NothingToClaim();
+        pendingBnbBonuses[msg.sender] = 0;
+        totalBnbCommunity -= amount;
+        _sendExact(msg.sender, amount, true);
     }
 
     function _sendExact(address to, uint256 amount, bool isBnb) internal {
         if (isBnb) {
+            require(address(this).balance >= amount, "Insufficient BNB");
             (bool ok, ) = payable(to).call{value: amount}("");
             require(ok, "BNB transfer failed");
         } else {
@@ -216,19 +217,21 @@ contract AltexeraSecureVault is ReentrancyGuard {
         }
     }
 
-    function _distributeNetwork(address user, uint256 amount) internal {
+    function _distributeNetwork(address user, uint256 amount, bool isBnb) internal {
         address current = _networkNodes[user].parent;
         uint256 added;
         for (uint8 level = 1; level <= MAX_LEVELS && current != address(0); ++level) {
             uint8 eligibleRank = _updateRank(current, amount);
             uint256 reward = Math.mulDiv(amount, _getLevelRate(eligibleRank, level), 10_000);
             if (reward != 0) {
-                pendingCommunityBonuses[current] += reward;
+                if (isBnb) pendingBnbBonuses[current] += reward;
+                else pendingUsdtBonuses[current] += reward;
                 added += reward;
             }
             current = _networkNodes[current].parent;
         }
-        totalCommunityLiability += added;
+        if (isBnb) totalBnbCommunity += added;
+        else totalUsdtCommunity += added;
     }
 
     function _updateRank(address user, uint256 amount) internal returns (uint8 eligibleRank) {
@@ -264,15 +267,23 @@ contract AltexeraSecureVault is ReentrancyGuard {
         return userStakes[user][index];
     }
 
-    function _recordPayment(Stake storage s, uint256 principal, uint256 profit) internal {
+    function _recordPayment(Stake storage s, uint256 principal, uint256 profit, bool isBnb) internal {
         uint256 paidPrincipal = uint256(s.paidPrincipal) + principal;
         uint256 paidProfit = uint256(s.sweptRewards) + profit;
         uint256 amount = principal + profit;
-        if (paidPrincipal > s.amount || paidProfit > s.totalProfit || principal > totalPrincipalLiability || amount > totalStakingLiability) revert AccountingInvariant();
+        
+        if (paidPrincipal > s.amount || paidProfit > s.totalProfit) revert AccountingInvariant();
+        
         s.paidPrincipal = uint128(paidPrincipal);
         s.sweptRewards = uint128(paidProfit);
-        totalPrincipalLiability -= principal;
-        totalStakingLiability -= amount;
+        
+        if (isBnb) {
+            totalBnbPrincipal -= principal;
+            totalBnbStaking -= amount;
+        } else {
+            totalUsdtPrincipal -= principal;
+            totalUsdtStaking -= amount;
+        }
     }
 
     function _pending(Stake storage s) internal view returns (uint256 principal, uint256 profit) {
