@@ -76,4 +76,8 @@ The Altexera smart contract is designed to be non-custodial. Within the scope of
 ## Contact & Custom Audits
 If you are a project founder or an investor and require a similar independent security review for your smart contracts, feel free to reach out.
 
-**Telegram:** [@moritz_sec](https://t.me/moritz_sec)
+**GitHub:** [moritz-sec](https://github.com/moritz-sec)  
+**Cantina:** [moritzsec](https://cantina.xyz/u/moritzsec)  
+**Sherlock:** moritz_schneider_sec  
+**Telegram:** [@moritz_sec](https://t.me/moritz_sec)  
+**Email:** moritz.schneider.sec@proton.me
